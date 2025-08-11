@@ -1179,7 +1179,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
 
       {/* Applications Modal */}
       {showApplicationsModal && selectedJobForApplications && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-4xl w-full max-h-screen overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
