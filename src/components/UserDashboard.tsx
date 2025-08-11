@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useTranslation } from '../hooks/useTranslation';
 import { Profile } from '../types/database';
-import { NotificationCenter } from './NotificationCenter';
-import { ChatModal } from './ChatModal';
+import { useTranslation } from '../hooks/useTranslation';
 import { PhotoUpload } from './PhotoUpload';
+import { ChatModal } from './ChatModal';
+import { NotificationCenter } from './NotificationCenter';
 
 interface UserDashboardProps {
   user: Profile;
@@ -13,102 +13,107 @@ interface Job {
   id: string;
   title: string;
   category: string;
-  status: 'new' | 'offered' | 'accepted' | 'in_progress' | 'done' | 'disputed' | 'cancelled';
-  price_min: number;
-  price_max: number;
-  created_at: string;
+  description: string;
+  budget_min: number;
+  budget_max: number;
+  status: 'new' | 'accepted' | 'in_progress' | 'done';
   professional?: string;
-  applications?: number;
+  created_at: string;
+  scheduled_at?: string;
+  applications_count?: number;
 }
 
 interface Tender {
   id: string;
   title: string;
   category: string;
-  status: 'open' | 'bafo' | 'awarded' | 'cancelled' | 'expired';
+  description: string;
   budget_hint: number;
+  status: 'open' | 'awarded' | 'cancelled';
   created_at: string;
+  deadline: string;
   bids_count: number;
-  best_bid?: number;
   winner?: string;
 }
 
-interface Notification {
+interface Application {
   id: string;
-  type: 'job_accepted' | 'tender_won' | 'new_job' | 'tender_available' | 'payment_received' | 'review_received';
-  title: string;
+  professional_name: string;
+  professional_email: string;
   message: string;
-  time: string;
-  read: boolean;
-  userEmail?: string;
+  estimated_duration: string;
+  availability: string;
+  rating: number;
+  price?: number;
+  created_at: string;
+}
+
+interface Bid {
+  id: string;
+  professional_name: string;
+  professional_email: string;
+  price: number;
+  eta_slot: string;
+  warranty_days: number;
+  note: string;
+  rating: number;
+  created_at: string;
 }
 
 export function UserDashboard({ user }: UserDashboardProps) {
-  const { t, language } = useTranslation();
-  
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'overview' | 'jobs' | 'tenders' | 'messages' | 'settings'>('overview');
   const [showJobModal, setShowJobModal] = useState(false);
   const [showTenderModal, setShowTenderModal] = useState(false);
-  const [showJobDetailsModal, setShowJobDetailsModal] = useState(false);
-  const [showReviewModal, setShowReviewModal] = useState(false);
-  const [showBidsModal, setShowBidsModal] = useState(false);
-  const [selectedJob, setSelectedJob] = useState<any>(null);
-  const [selectedTender, setSelectedTender] = useState<any>(null);
   const [showChatModal, setShowChatModal] = useState(false);
   const [showApplicationsModal, setShowApplicationsModal] = useState(false);
+  const [showBidsModal, setShowBidsModal] = useState(false);
+  const [showJobDetailsModal, setShowJobDetailsModal] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedJobForApplications, setSelectedJobForApplications] = useState<Job | null>(null);
   const [selectedTenderForBids, setSelectedTenderForBids] = useState<Tender | null>(null);
+  const [selectedJobForDetails, setSelectedJobForDetails] = useState<Job | null>(null);
+  const [selectedJobForReview, setSelectedJobForReview] = useState<Job | null>(null);
   const [loading, setLoading] = useState(false);
-  const [jobPhotos, setJobPhotos] = useState<File[]>([]);
-  const [tenderPhotos, setTenderPhotos] = useState<File[]>([]);
-  const [jobFormData, setJobFormData] = useState({
-    category: '',
-    description: '',
-    minBudget: '',
-    maxBudget: '',
-    preferredDateTime: ''
-  });
-  const [tenderFormData, setTenderFormData] = useState({
-    category: '',
-    description: '',
-    budgetHint: '',
-    availableFrom: '',
-    availableUntil: ''
-  });
-  
-  // Mock data для клиента
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+
+  // Mock data
   const myJobs: Job[] = [
     {
       id: '1',
       title: t.jobs.fixLeakingTap,
       category: 'plumbing',
-      status: 'accepted',
-      price_min: 200,
-      price_max: 500,
-      created_at: '2025-01-14T10:00:00Z',
+      description: 'Кран на кухне протекает уже неделю, нужно срочно починить.',
+      budget_min: 200,
+      budget_max: 500,
+      status: 'done',
       professional: t.professionals.mikhailPetrov,
-      applications: 3
+      created_at: '2025-01-10T10:00:00Z',
+      scheduled_at: '2025-01-12T14:00:00Z'
     },
     {
       id: '2',
       title: t.jobs.generalCleaning,
       category: 'cleaning',
-      status: 'done',
-      price_min: 800,
-      price_max: 1200,
-      created_at: '2025-01-12T14:30:00Z',
+      description: 'Нужна генеральная уборка квартиры 60 кв.м.',
+      budget_min: 800,
+      budget_max: 1200,
+      status: 'in_progress',
       professional: t.professionals.annaVolkova,
-      applications: 5
+      created_at: '2025-01-08T14:30:00Z',
+      scheduled_at: '2025-01-15T10:00:00Z'
     },
     {
       id: '3',
       title: t.jobs.installOutlets,
       category: 'electrical',
+      description: 'Установить 4 новые розетки в спальне.',
+      budget_min: 300,
+      budget_max: 600,
       status: 'new',
-      price_min: 300,
-      price_max: 600,
-      created_at: '2025-01-13T09:15:00Z',
-      applications: 2
+      created_at: '2025-01-14T09:15:00Z',
+      applications_count: 3
     }
   ];
 
@@ -117,49 +122,175 @@ export function UserDashboard({ user }: UserDashboardProps) {
       id: '1',
       title: t.tenders.housePainting,
       category: 'painting',
-      status: 'awarded',
+      description: 'Покраска фасада дома 120 кв.м, включая подготовку поверхности.',
       budget_hint: 5000,
-      created_at: '2025-01-10T16:00:00Z',
-      bids_count: 8,
-      best_bid: 4200,
+      status: 'awarded',
+      created_at: '2025-01-05T16:00:00Z',
+      deadline: '2025-01-20T23:59:59Z',
+      bids_count: 7,
       winner: t.professionals.elenaSmirnova
     },
     {
       id: '2',
       title: t.tenders.landscapeDesign,
       category: 'gardening',
-      status: 'open',
+      description: 'Создание ландшафтного дизайна участка 10 соток.',
       budget_hint: 8000,
+      status: 'open',
       created_at: '2025-01-12T11:20:00Z',
-      bids_count: 5,
-      best_bid: 6800
+      deadline: '2025-01-25T23:59:59Z',
+      bids_count: 12
     }
   ];
 
-  // Mock notifications
-  const notifications: Notification[] = [
+  const mockApplications: Application[] = [
     {
       id: '1',
-      type: 'job_accepted',
+      professional_name: 'Дмитрий Козлов',
+      professional_email: 'dmitry@example.com',
+      message: t.applications.electricianMessage,
+      estimated_duration: '2-3 часа',
+      availability: 'Сегодня',
+      rating: 4.9,
+      price: 450,
+      created_at: '2025-01-14T10:30:00Z'
+    },
+    {
+      id: '2',
+      professional_name: 'Сергей Иванов',
+      professional_email: 'sergey@example.com',
+      message: t.applications.quickServiceMessage,
+      estimated_duration: '1-2 часа',
+      availability: 'Немедленно',
+      rating: 4.7,
+      price: 380,
+      created_at: '2025-01-14T11:15:00Z'
+    }
+  ];
+
+  const mockBids: Bid[] = [
+    {
+      id: '1',
+      professional_name: 'Елена Смирнова',
+      professional_email: 'elena@example.com',
+      price: 4200,
+      eta_slot: 'На следующей неделе',
+      warranty_days: 365,
+      note: 'Использую только качественные материалы. Гарантия 1 год.',
+      rating: 4.8,
+      created_at: '2025-01-13T09:00:00Z'
+    },
+    {
+      id: '2',
+      professional_name: 'Андрей Петров',
+      professional_email: 'andrey@example.com',
+      price: 3800,
+      eta_slot: 'Через 2 недели',
+      warranty_days: 180,
+      note: 'Быстро и качественно. Опыт работы 10 лет.',
+      rating: 4.6,
+      created_at: '2025-01-13T14:20:00Z'
+    }
+  ];
+
+  const notifications = [
+    {
+      id: '1',
+      type: 'job_accepted' as const,
       title: t.notifications.jobAccepted,
       message: t.notifications.jobAcceptedMessage,
       time: t.notifications.fiveMinutesAgo,
       read: false,
+      avatar: '👨‍🔧',
       userEmail: 'mikhail@example.com'
     },
     {
       id: '2',
-      type: 'tender_won',
+      type: 'tender_won' as const,
       title: t.notifications.tenderWon,
       message: t.notifications.tenderWonMessage,
       time: t.notifications.twoHoursAgo,
-      read: false,
+      read: true,
+      avatar: '🎨',
       userEmail: 'elena@example.com'
     }
   ];
 
+  const handleCreateJob = async (jobData: any) => {
+    setLoading(true);
+    try {
+      console.log('Creating job:', jobData);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setShowJobModal(false);
+      alert('Заявка создана успешно!');
+    } catch (error) {
+      console.error('Error creating job:', error);
+      alert('Ошибка при создании заявки');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateTender = async (tenderData: any) => {
+    setLoading(true);
+    try {
+      console.log('Creating tender:', tenderData);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setShowTenderModal(false);
+      alert('Тендер создан успешно!');
+    } catch (error) {
+      console.error('Error creating tender:', error);
+      alert('Ошибка при создании тендера');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewJobDetails = (job: Job) => {
+    setSelectedJobForDetails(job);
+    setShowJobDetailsModal(true);
+  };
+
+  const handleLeaveReview = (job: Job) => {
+    setSelectedJobForReview(job);
+    setShowReviewModal(true);
+  };
+
+  const handleViewApplications = (job: Job) => {
+    setSelectedJobForApplications(job);
+    setShowApplicationsModal(true);
+  };
+
+  const handleViewBids = (tender: Tender) => {
+    setSelectedTenderForBids(tender);
+    setShowBidsModal(true);
+  };
+
+  const handleSubmitReview = async () => {
+    if (!selectedJobForReview) return;
+    
+    setLoading(true);
+    try {
+      console.log('Submitting review:', {
+        jobId: selectedJobForReview.id,
+        rating: reviewRating,
+        comment: reviewComment
+      });
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setShowReviewModal(false);
+      setReviewRating(5);
+      setReviewComment('');
+      alert('Отзыв отправлен успешно!');
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      alert('Ошибка при отправке отзыва');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(t.language === 'ro' ? 'ro-RO' : 'ru-RU', {
+    return new Date(dateString).toLocaleDateString('ru-RU', {
       day: 'numeric',
       month: 'short',
       hour: '2-digit',
@@ -170,179 +301,88 @@ export function UserDashboard({ user }: UserDashboardProps) {
   const getStatusColor = (status: string) => {
     const colors = {
       new: 'bg-blue-100 text-blue-800',
-      offered: 'bg-yellow-100 text-yellow-800',
-      accepted: 'bg-green-100 text-green-800',
+      accepted: 'bg-yellow-100 text-yellow-800',
       in_progress: 'bg-purple-100 text-purple-800',
-      done: 'bg-gray-100 text-gray-800',
-      disputed: 'bg-red-100 text-red-800',
-      cancelled: 'bg-gray-100 text-gray-600',
-      open: 'bg-green-100 text-green-800',
-      bafo: 'bg-orange-100 text-orange-800',
-      awarded: 'bg-purple-100 text-purple-800',
-      expired: 'bg-gray-100 text-gray-600'
+      done: 'bg-green-100 text-green-800',
+      open: 'bg-blue-100 text-blue-800',
+      awarded: 'bg-green-100 text-green-800',
+      cancelled: 'bg-red-100 text-red-800'
     };
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
   const getStatusText = (status: string) => {
-    return t.common[status as keyof typeof t.common] || status;
-  };
-
-  const handleCreateJob = async (jobData: any) => {
-    setLoading(true);
-    try {
-      const newJob: Job = {
-        id: Date.now().toString(),
-        title: `${jobFormData.category} - ${jobFormData.description.substring(0, 50)}...`,
-        category: jobFormData.category,
-        status: 'new',
-        price_min: parseInt(jobFormData.minBudget) || 0,
-        price_max: parseInt(jobFormData.maxBudget) || 0,
-        created_at: new Date().toISOString(),
-        applications: 0
-      };
-      
-      console.log('Creating job:', newJob, 'Photos:', jobPhotos);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Сброс формы
-      setJobFormData({
-        category: '',
-        description: '',
-        minBudget: '',
-        maxBudget: '',
-        preferredDateTime: ''
-      });
-      setJobPhotos([]);
-      setShowJobModal(false);
-      
-      console.log('Job created successfully:', newJob);
-    } catch (error) {
-      console.error('Error creating job:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreateTender = async (tenderData: any) => {
-    setLoading(true);
-    try {
-      const newTender: Tender = {
-        id: Date.now().toString(),
-        title: `${tenderFormData.category} - ${tenderFormData.description.substring(0, 50)}...`,
-        category: tenderFormData.category,
-        status: 'open',
-        budget_hint: parseInt(tenderFormData.budgetHint) || 0,
-        created_at: new Date().toISOString(),
-        bids_count: 0
-      };
-      
-      console.log('Creating tender:', newTender, 'Photos:', tenderPhotos);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Сброс формы
-      setTenderFormData({
-        category: '',
-        description: '',
-        budgetHint: '',
-        availableFrom: '',
-        availableUntil: ''
-      });
-      setTenderPhotos([]);
-      setShowTenderModal(false);
-      
-      console.log('Tender created successfully');
-    } catch (error) {
-      console.error('Error creating tender:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleNotificationClick = (notification: Notification) => {
-    console.log('Notification clicked:', notification);
-  };
-
-  const markNotificationAsRead = (id: string) => {
-    console.log('Marking notification as read:', id);
-  };
-
-  const handleViewApplications = (job: Job) => {
-    console.log('Viewing applications for job:', job.id);
-    setSelectedJobForApplications(job);
-    setShowApplicationsModal(true);
-  };
-
-  const handleViewBids = (tender: Tender) => {
-    console.log('Viewing bids for tender:', tender.id);
-    setSelectedTenderForBids(tender);
-    setShowBidsModal(true);
-  };
-
-  const handleContactProfessional = () => {
-    console.log('Opening chat with professional');
-    setShowChatModal(true);
-  };
-
-  const handleLeaveReview = (jobId: string) => {
-    console.log('Opening review form for job:', jobId);
-    // Здесь можно добавить модальное окно для отзыва
-  };
-
-  const handleViewJobDetails = (jobId: string) => {
-    console.log('Viewing job details:', jobId);
-    // Здесь можно добавить модальное окно с деталями работы
-  };
-
-  const handleViewTenderDetails = (tenderId: string) => {
-    console.log('Viewing tender details:', tenderId);
-    // Здесь можно добавить модальное окно с деталями тендера
-  };
-
-  const handleActivityClick = (activity: any) => {
-    console.log('Activity clicked:', activity);
-    if (activity.actionable) {
-      // Здесь можно добавить специфичную логику для каждого типа активности
-      switch (activity.type) {
-        case 'job_application':
-          console.log('Opening job applications');
-          break;
-        case 'tender_bid':
-          console.log('Opening tender bids');
-          break;
-        default:
-          console.log('Default activity action');
-      }
-    }
+    const statusTexts = {
+      new: t.common.new,
+      accepted: t.common.accepted,
+      in_progress: t.common.inProgress,
+      done: t.common.done,
+      open: t.common.open,
+      awarded: t.common.awarded,
+      cancelled: t.common.cancelled
+    };
+    return statusTexts[status as keyof typeof statusTexts] || status;
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{t.dashboard.welcomeBack}, {user.full_name}!</h1>
-            <p className="text-gray-600 mt-2">{t.dashboard.manageRequests}</p>
-            <div className="flex items-center mt-3">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                👤 {user.account_type === 'business' ? (language === 'ro' ? 'Business' : 'Бизнес') : t.auth.client}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">{t.dashboard.welcomeBack}, {user.full_name}!</h1>
+          <p className="text-gray-600 mt-2">{t.dashboard.manageRequests}</p>
+          <div className="flex items-center mt-3">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+              👤 {user.account_type === 'business' ? 'Бизнес' : 'Клиент'}
+            </span>
+            <div className="ml-4 flex items-center space-x-4 text-sm text-gray-500">
+              <span className="flex items-center">
+                ⭐ {user.rating} {t.dashboard.rating}
               </span>
-              <div className="ml-4 flex items-center space-x-4 text-sm text-gray-500">
-                <span className="flex items-center">
-                  ⭐ {user.rating} {t.dashboard.rating}
-                </span>
-                <span className="flex items-center">
-                  ✅ {t.dashboard.verified}
-                </span>
-              </div>
             </div>
           </div>
+        </div>
+        <div className="flex items-center space-x-4">
           <NotificationCenter 
             notifications={notifications}
-            onMarkAsRead={markNotificationAsRead}
-            onNotificationClick={handleNotificationClick}
+            onMarkAsRead={(id) => console.log('Mark as read:', id)}
+            onNotificationClick={(notification) => console.log('Notification clicked:', notification)}
           />
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid md:grid-cols-2 gap-6 mb-8">
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold mb-2">{t.userDashboard.instantBooking.title}</h3>
+              <p className="text-blue-100 mb-4">{t.userDashboard.instantBooking.description}</p>
+              <button 
+                onClick={() => setShowJobModal(true)}
+                className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+              >
+                {t.userDashboard.instantBooking.bookNow}
+              </button>
+            </div>
+            <div className="text-6xl opacity-20">🔧</div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold mb-2">{t.userDashboard.createAuction.title}</h3>
+              <p className="text-purple-100 mb-4">{t.userDashboard.createAuction.description}</p>
+              <button 
+                onClick={() => setShowTenderModal(true)}
+                className="bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
+              >
+                {t.userDashboard.createAuction.startAuction}
+              </button>
+            </div>
+            <div className="text-6xl opacity-20">🎯</div>
+          </div>
         </div>
       </div>
 
@@ -350,11 +390,11 @@ export function UserDashboard({ user }: UserDashboardProps) {
       <div className="border-b border-gray-200 mb-8">
         <nav className="-mb-px flex space-x-8">
           {[
-            { key: 'overview', label: language === 'ro' ? 'Prezentare generală' : 'Обзор', icon: '📊' },
-            { key: 'jobs', label: language === 'ro' ? 'Lucrările Mele' : 'Мои Работы', icon: '🔧' },
-            { key: 'tenders', label: language === 'ro' ? 'Licitațiile Mele' : 'Мои Тендеры', icon: '🎯' },
-            { key: 'messages', label: language === 'ro' ? 'Mesaje' : 'Сообщения', icon: '💬' },
-            { key: 'settings', label: language === 'ro' ? 'Setări' : 'Настройки', icon: '⚙️' }
+            { key: 'overview', label: t.userDashboard.overview, icon: '📊' },
+            { key: 'jobs', label: t.userDashboard.myJobs, icon: '🔧' },
+            { key: 'tenders', label: t.userDashboard.myAuctions, icon: '🎯' },
+            { key: 'messages', label: t.userDashboard.messages, icon: '💬' },
+            { key: 'settings', label: t.userDashboard.settings, icon: '⚙️' }
           ].map((tab) => (
             <button
               key={tab.key}
@@ -375,67 +415,6 @@ export function UserDashboard({ user }: UserDashboardProps) {
       {/* Overview Tab */}
       {activeTab === 'overview' && (
         <div className="space-y-8">
-          {/* Quick Actions */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl p-8 border border-blue-200 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mr-4">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">
-                    {language === 'ro' ? 'Rezervare Instantă' : 'Быстрый Заказ'}
-                  </h3>
-                  <p className="text-gray-600 text-sm">
-                    {language === 'ro' ? 'Conectează-te cu profesioniști disponibili imediat.' : 'Найдите доступных специалистов прямо сейчас.'}
-                  </p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setShowJobModal(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
-                style={{ 
-                  pointerEvents: 'auto',
-                  zIndex: 9999,
-                  position: 'relative'
-                }}
-              >
-                {language === 'ro' ? 'Rezervă Acum' : 'Забронировать Сейчас'}
-              </button>
-            </div>
-
-            <div className="bg-gradient-to-br from-purple-50 to-pink-100 rounded-2xl p-8 border border-purple-200 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center mr-4">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">
-                    {language === 'ro' ? 'Creează Licitație' : 'Создать Тендер'}
-                  </h3>
-                  <p className="text-gray-600 text-sm">
-                    {language === 'ro' ? 'Lasă profesioniștii să concureze pentru proiectul tău.' : 'Позвольте специалистам конкурировать за ваш проект.'}
-                  </p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setShowTenderModal(true)}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
-                style={{ 
-                  pointerEvents: 'auto',
-                  zIndex: 9999,
-                  position: 'relative'
-                }}
-              >
-                {language === 'ro' ? 'Începe Licitația' : 'Создать Тендер'}
-              </button>
-            </div>
-          </div>
-
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -446,8 +425,8 @@ export function UserDashboard({ user }: UserDashboardProps) {
                   </div>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">{language === 'ro' ? 'Lucrări Active' : 'Активные Работы'}</p>
-                  <p className="text-2xl font-bold text-gray-900">{myJobs.filter(j => j.status !== 'done' && j.status !== 'cancelled').length}</p>
+                  <p className="text-sm font-medium text-gray-500">{t.dashboard.activeJobs}</p>
+                  <p className="text-2xl font-bold text-gray-900">{myJobs.filter(j => j.status !== 'done').length}</p>
                 </div>
               </div>
             </div>
@@ -460,7 +439,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
                   </div>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">{language === 'ro' ? 'Finalizate' : 'Завершенные'}</p>
+                  <p className="text-sm font-medium text-gray-500">{t.dashboard.completed}</p>
                   <p className="text-2xl font-bold text-gray-900">{myJobs.filter(j => j.status === 'done').length}</p>
                 </div>
               </div>
@@ -474,7 +453,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
                   </div>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">{language === 'ro' ? 'Licitații' : 'Тендеры'}</p>
+                  <p className="text-sm font-medium text-gray-500">{t.dashboard.tenders}</p>
                   <p className="text-2xl font-bold text-gray-900">{myTenders.length}</p>
                 </div>
               </div>
@@ -488,8 +467,8 @@ export function UserDashboard({ user }: UserDashboardProps) {
                   </div>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">{language === 'ro' ? 'Cheltuit' : 'Потрачено'}</p>
-                  <p className="text-2xl font-bold text-gray-900">3,200 лей</p>
+                  <p className="text-sm font-medium text-gray-500">{t.dashboard.spent}</p>
+                  <p className="text-2xl font-bold text-gray-900">2,450 {t.common.currency}</p>
                 </div>
               </div>
             </div>
@@ -497,87 +476,19 @@ export function UserDashboard({ user }: UserDashboardProps) {
 
           {/* Recent Activity */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">
-              {language === 'ro' ? 'Activitate Recenta' : 'Недавняя активность'}
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t.dashboard.recentActivity}</h3>
             <div className="space-y-4">
               {[
-                {
-                  type: 'job_application',
-                  title: language === 'ro' ? 'Cerere primita pentru instalarea prizelor' : 'Получена заявка на установку розеток',
-                  message: language === 'ro' ? 'Mihail Petrov s-a oferit sa instaleze prizele pentru 450 lei' : 'Михаил Петров предложил установить розетки за 450 лей',
-                  details: language === 'ro' ? 'Disponibil astazi • Garantie 2 ani' : 'Доступен сегодня • Гарантия 2 года',
-                  time: language === 'ro' ? '2 ore in urma' : '2 часа назад',
-                  icon: '📧',
-                  color: 'bg-blue-50 border-blue-200',
-                  actionable: true
-                },
-                {
-                  type: 'tender_bid',
-                  title: language === 'ro' ? 'Oferta noua pentru licitatia de vopsire' : 'Новое предложение на тендер покраски',
-                  message: language === 'ro' ? 'Elena Smirnova a oferit 4200 lei pentru vopsirea casei' : 'Елена Смирнова предложила 4200 лей за покраску дома',
-                  details: language === 'ro' ? 'Garantie 3 ani • Materiale incluse' : 'Гарантия 3 года • Материалы включены',
-                  time: language === 'ro' ? '4 ore in urma' : '4 часа назад',
-                  icon: '🎯',
-                  color: 'bg-purple-50 border-purple-200',
-                  actionable: true
-                },
-                {
-                  type: 'job_completed',
-                  title: language === 'ro' ? 'Curatenie generala finalizata' : 'Генеральная уборка завершена',
-                  message: language === 'ro' ? 'Ana Volkova a finalizat curatenia generala a apartamentului' : 'Анна Волкова завершила генеральную уборку квартиры',
-                  details: language === 'ro' ? 'Evaluare: 5★ • Platit: 1000 lei' : 'Оценка: 5★ • Оплачено: 1000 лей',
-                  time: language === 'ro' ? '1 zi in urma' : '1 день назад',
-                  icon: '✅',
-                  color: 'bg-green-50 border-green-200',
-                  actionable: false
-                },
-                {
-                  type: 'payment_processed',
-                  title: language === 'ro' ? 'Plata procesata pentru instalatii electrice' : 'Платеж обработан за электромонтаж',
-                  message: language === 'ro' ? 'Plata automata catre Dmitri Kozlov pentru instalatii electrice' : 'Автоматический платеж Дмитрию Козлову за электромонтаж',
-                  details: language === 'ro' ? 'Suma: 720 lei • Card *4532' : 'Сумма: 720 лей • Карта *4532',
-                  time: language === 'ro' ? '2 zile in urma' : '2 дня назад',
-                  icon: '💳',
-                  color: 'bg-gray-50 border-gray-200',
-                  actionable: false
-                }
+                { type: 'job_completed', message: t.common.activity.cleaningCompleted, time: t.common.activity.twoHoursAgo, icon: '✅' },
+                { type: 'application_received', message: t.common.activity.applicationReceived, time: t.common.activity.fourHoursAgo, icon: '📝' },
+                { type: 'tender_awarded', message: t.common.activity.tenderAwarded, time: t.common.activity.oneDayAgo, icon: '🏆' },
+                { type: 'payment_made', message: t.common.activity.paymentReceived, time: t.common.activity.twoDaysAgo, icon: '💳' }
               ].map((activity, index) => (
-                <div 
-                  key={index} 
-                  className={`p-4 rounded-xl border transition-all duration-200 ${activity.color} ${
-                    activity.actionable ? 'hover:shadow-md cursor-pointer' : ''
-                  }`}
-                  onClick={activity.actionable ? () => handleActivityClick(activity) : undefined}
-                >
-                  <div className="flex items-start space-x-4">
-                    <div className="text-2xl">{activity.icon}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="font-semibold text-gray-900 text-sm">{activity.title}</h4>
-                        {activity.actionable && (
-                          <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                            {language === 'ro' ? 'Necesita actiune' : 'Требует действия'}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-gray-700 text-sm mb-2">{activity.message}</p>
-                      <p className="text-gray-500 text-xs mb-2">{activity.details}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-500">{activity.time}</span>
-                        {activity.actionable && (
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleActivityClick(activity);
-                            }}
-                            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-                          >
-                            {language === 'ro' ? 'Vezi detalii →' : 'Подробнее →'}
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                <div key={index} className="flex items-center space-x-3 py-2">
+                  <span className="text-2xl">{activity.icon}</span>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-900">{activity.message}</p>
+                    <p className="text-xs text-gray-500">{activity.time}</p>
                   </div>
                 </div>
               ))}
@@ -595,7 +506,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
               onClick={() => setShowJobModal(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
             >
-              {t.userDashboard.createRequest}
+              + {t.userDashboard.createRequest}
             </button>
           </div>
 
@@ -604,56 +515,76 @@ export function UserDashboard({ user }: UserDashboardProps) {
               <div key={job.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{job.title}</h3>
-                    <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
-                      <span>💰 {job.price_min}-{job.price_max} {t.common.currency}</span>
-                      <span>📅 {formatDate(job.created_at)}</span>
-                      {job.applications && (
-                        <span>👥 {job.applications} {t.common.applications}</span>
-                      )}
+                    <div className="flex items-center space-x-2 mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>
+                      <span className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(job.status)}`}>
+                        {getStatusText(job.status)}
+                      </span>
                     </div>
-                    {job.professional && (
-                      <p className="text-sm text-gray-600">
-                        {t.common.professional}: <span className="font-medium">{job.professional}</span>
-                      </p>
-                    )}
+                    <p className="text-gray-600 mb-3">{job.description}</p>
+                    <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <span>💰 {job.budget_min}-{job.budget_max} {t.common.currency}</span>
+                      <span>📅 {formatDate(job.created_at)}</span>
+                      {job.professional && <span>👨‍🔧 {job.professional}</span>}
+                      {job.applications_count && <span>📝 {job.applications_count} {t.common.applications}</span>}
+                    </div>
                   </div>
-                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(job.status)}`}>
-                    {getStatusText(job.status)}
-                  </span>
                 </div>
 
                 <div className="flex space-x-3">
-                  {job.status === 'new' && (
-                    <button 
-                      onClick={() => handleViewApplications(job)}
-                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      {t.userDashboard.viewApplications}
-                    </button>
-                  )}
-                  {job.status === 'accepted' && (
-                    <button 
-                      onClick={handleContactProfessional}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      {t.userDashboard.contactProfessional}
-                    </button>
-                  )}
-                  {job.status === 'done' && (
-                    <button 
-                      onClick={() => handleLeaveReview(job.id)}
-                      className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      {t.userDashboard.leaveReview}
-                    </button>
-                  )}
                   <button 
-                    onClick={() => handleViewJobDetails(job.id)}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    onClick={() => handleViewJobDetails(job)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                    style={{ 
+                      pointerEvents: 'auto',
+                      zIndex: 9999,
+                      position: 'relative'
+                    }}
                   >
                     {t.userDashboard.viewDetails}
                   </button>
+                  
+                  {job.status === 'done' && (
+                    <button 
+                      onClick={() => handleLeaveReview(job)}
+                      className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-md hover:shadow-lg border-2 border-yellow-400"
+                      style={{ 
+                        pointerEvents: 'auto',
+                        zIndex: 9999,
+                        position: 'relative'
+                      }}
+                    >
+                      ⭐ {t.userDashboard.leaveReview}
+                    </button>
+                  )}
+                  
+                  {(job.status === 'accepted' || job.status === 'in_progress') && job.professional && (
+                    <button 
+                      onClick={() => setShowChatModal(true)}
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                      style={{ 
+                        pointerEvents: 'auto',
+                        zIndex: 9999,
+                        position: 'relative'
+                      }}
+                    >
+                      💬 {t.userDashboard.contactProfessional}
+                    </button>
+                  )}
+                  
+                  {job.status === 'new' && job.applications_count && job.applications_count > 0 && (
+                    <button 
+                      onClick={() => handleViewApplications(job)}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                      style={{ 
+                        pointerEvents: 'auto',
+                        zIndex: 9999,
+                        position: 'relative'
+                      }}
+                    >
+                      📋 {t.userDashboard.viewApplications}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -670,7 +601,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
               onClick={() => setShowTenderModal(true)}
               className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
             >
-              {t.userDashboard.createTender}
+              + {t.userDashboard.createTender}
             </button>
           </div>
 
@@ -679,51 +610,45 @@ export function UserDashboard({ user }: UserDashboardProps) {
               <div key={tender.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{tender.title}</h3>
-                    <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900">{tender.title}</h3>
+                      <span className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(tender.status)}`}>
+                        {getStatusText(tender.status)}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 mb-3">{tender.description}</p>
+                    <div className="flex items-center space-x-4 text-sm text-gray-500">
                       <span>💰 ~{tender.budget_hint} {t.common.currency}</span>
                       <span>📅 {formatDate(tender.created_at)}</span>
+                      <span>⏰ {formatDate(tender.deadline)}</span>
                       <span>🎯 {tender.bids_count} {t.common.bids}</span>
+                      {tender.winner && <span>🏆 {tender.winner}</span>}
                     </div>
-                    {tender.best_bid && (
-                      <p className="text-sm text-green-600 font-medium">
-                        {t.common.bestBid}: {tender.best_bid} {t.common.currency}
-                      </p>
-                    )}
-                    {tender.winner && (
-                      <p className="text-sm text-gray-600">
-                        {t.common.winner}: <span className="font-medium">{tender.winner}</span>
-                      </p>
-                    )}
                   </div>
-                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(tender.status)}`}>
-                    {getStatusText(tender.status)}
-                  </span>
                 </div>
 
                 <div className="flex space-x-3">
-                  {tender.status === 'open' && (
+                  {tender.status === 'open' && tender.bids_count > 0 && (
                     <button 
                       onClick={() => handleViewBids(tender)}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                     >
                       {t.userDashboard.viewBids}
                     </button>
                   )}
-                  {tender.status === 'awarded' && (
-                    <button 
-                      onClick={handleContactProfessional}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      {t.userDashboard.contactProfessional}
+                  {tender.status === 'open' && tender.bids_count > 0 && (
+                    <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                      {t.userDashboard.selectWinner}
                     </button>
                   )}
-                  <button 
-                    onClick={() => handleViewTenderDetails(tender.id)}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                  >
-                    {t.userDashboard.viewDetails}
-                  </button>
+                  {tender.status === 'awarded' && tender.winner && (
+                    <button 
+                      onClick={() => setShowChatModal(true)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      💬 Связаться с {tender.winner}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -750,7 +675,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
             </svg>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Сообщения с специалистами</h3>
             <p className="text-gray-600 mb-4">
-              Чаты создаются автоматически после принятия заявок или выбора победителей тендеров
+              Чаты создаются автоматически после принятия заявок или выбора победителя тендера
             </p>
             <button 
               onClick={() => setShowChatModal(true)}
@@ -765,10 +690,10 @@ export function UserDashboard({ user }: UserDashboardProps) {
       {/* Settings Tab */}
       {activeTab === 'settings' && (
         <div className="space-y-6">
-          <h2 className="text-xl font-semibold text-gray-900">{t.settings.profileSettings}</h2>
+          <h2 className="text-xl font-semibold text-gray-900">{t.userDashboard.settings}</h2>
           
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Основная информация</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">{t.userDashboard.profileSettings}</h3>
             <div className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
@@ -806,36 +731,35 @@ export function UserDashboard({ user }: UserDashboardProps) {
             </div>
           </div>
 
-          {/* Notifications Settings */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">{t.settings.notifications}</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-medium text-gray-900">{t.settings.emailNotifications}</h4>
-                  <p className="text-sm text-gray-500">{t.settings.emailNotificationsDesc}</p>
+                  <h4 className="font-medium text-gray-900">{t.userDashboard.emailNotifications}</h4>
+                  <p className="text-sm text-gray-500">Получать уведомления о новых предложениях</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" defaultChecked className="sr-only peer" />
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                 </label>
               </div>
-
+              
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-medium text-gray-900">{t.settings.smsNotifications}</h4>
-                  <p className="text-sm text-gray-500">{t.settings.smsNotificationsDesc}</p>
+                  <h4 className="font-medium text-gray-900">{t.userDashboard.smsNotifications}</h4>
+                  <p className="text-sm text-gray-500">SMS о важных обновлениях</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" className="sr-only peer" />
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                 </label>
               </div>
-
+              
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-medium text-gray-900">{t.settings.pushNotifications}</h4>
-                  <p className="text-sm text-gray-500">{t.settings.pushNotificationsDesc}</p>
+                  <h4 className="font-medium text-gray-900">{t.userDashboard.pushNotifications}</h4>
+                  <p className="text-sm text-gray-500">Уведомления в браузере</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" defaultChecked className="sr-only peer" />
@@ -853,7 +777,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-screen overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">{t.forms.createJobRequest}</h2>
+                <h2 className="text-2xl font-bold text-gray-900">{t.userDashboard.bookInstantService}</h2>
                 <button
                   onClick={() => setShowJobModal(false)}
                   className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100"
@@ -865,18 +789,17 @@ export function UserDashboard({ user }: UserDashboardProps) {
               </div>
             </div>
 
-            <form onSubmit={(e) => { e.preventDefault(); handleCreateJob({}); }} className="p-6 space-y-6">
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              handleCreateJob(Object.fromEntries(formData));
+            }} className="p-6 space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {t.userDashboard.serviceCategory}
                 </label>
-                <select 
-                  value={jobFormData.category}
-                  onChange={(e) => setJobFormData(prev => ({ ...prev, category: e.target.value }))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                >
-                  <option value="">{t.auth.selectSpecialization}</option>
+                <select name="category" required className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                  <option value="">Выберите категорию</option>
                   <option value="plumbing">{t.categories.plumbing}</option>
                   <option value="electrical">{t.categories.electrical}</option>
                   <option value="cleaning">{t.categories.cleaning}</option>
@@ -893,12 +816,11 @@ export function UserDashboard({ user }: UserDashboardProps) {
                   {t.userDashboard.description}
                 </label>
                 <textarea
+                  name="description"
                   rows={4}
-                  value={jobFormData.description}
-                  onChange={(e) => setJobFormData(prev => ({ ...prev, description: e.target.value }))}
+                  required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder={t.forms.describeWork}
-                  required
                 />
               </div>
 
@@ -909,11 +831,10 @@ export function UserDashboard({ user }: UserDashboardProps) {
                   </label>
                   <input
                     type="number"
-                    value={jobFormData.minBudget}
-                    onChange={(e) => setJobFormData(prev => ({ ...prev, minBudget: e.target.value }))}
+                    name="budget_min"
+                    required
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="200"
-                    required
                   />
                 </div>
                 <div>
@@ -922,11 +843,10 @@ export function UserDashboard({ user }: UserDashboardProps) {
                   </label>
                   <input
                     type="number"
-                    value={jobFormData.maxBudget}
-                    onChange={(e) => setJobFormData(prev => ({ ...prev, maxBudget: e.target.value }))}
+                    name="budget_max"
+                    required
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="500"
-                    required
                   />
                 </div>
               </div>
@@ -937,8 +857,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
                 </label>
                 <input
                   type="datetime-local"
-                  value={jobFormData.preferredDateTime}
-                  onChange={(e) => setJobFormData(prev => ({ ...prev, preferredDateTime: e.target.value }))}
+                  name="scheduled_at"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -948,7 +867,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
                   {t.forms.problemPhotos}
                 </label>
                 <PhotoUpload
-                  onUpload={setJobPhotos}
+                  onUpload={(files) => console.log('Photos uploaded:', files)}
                   maxFiles={5}
                   acceptedTypes={['image/jpeg', 'image/png', 'image/webp']}
                 />
@@ -960,7 +879,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
                   disabled={loading}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-semibold transition-colors disabled:opacity-50"
                 >
-                  {loading ? t.common.creating : t.forms.createRequest}
+                  {loading ? t.common.creating : t.userDashboard.bookService}
                 </button>
                 <button
                   type="button"
@@ -981,7 +900,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-screen overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">{t.forms.createTender}</h2>
+                <h2 className="text-2xl font-bold text-gray-900">{t.userDashboard.createTender}</h2>
                 <button
                   onClick={() => setShowTenderModal(false)}
                   className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100"
@@ -993,18 +912,17 @@ export function UserDashboard({ user }: UserDashboardProps) {
               </div>
             </div>
 
-            <form onSubmit={(e) => { e.preventDefault(); handleCreateTender({}); }} className="p-6 space-y-6">
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              handleCreateTender(Object.fromEntries(formData));
+            }} className="p-6 space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {t.userDashboard.serviceCategory}
                 </label>
-                <select 
-                  value={tenderFormData.category}
-                  onChange={(e) => setTenderFormData(prev => ({ ...prev, category: e.target.value }))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  required
-                >
-                  <option value="">{t.auth.selectSpecialization}</option>
+                <select name="category" required className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                  <option value="">Выберите категорию</option>
                   <option value="plumbing">{t.categories.plumbing}</option>
                   <option value="electrical">{t.categories.electrical}</option>
                   <option value="cleaning">{t.categories.cleaning}</option>
@@ -1021,12 +939,11 @@ export function UserDashboard({ user }: UserDashboardProps) {
                   {t.userDashboard.projectDescription}
                 </label>
                 <textarea
+                  name="description"
                   rows={4}
-                  value={tenderFormData.description}
-                  onChange={(e) => setTenderFormData(prev => ({ ...prev, description: e.target.value }))}
+                  required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   placeholder={t.forms.describeProject}
-                  required
                 />
               </div>
 
@@ -1036,11 +953,9 @@ export function UserDashboard({ user }: UserDashboardProps) {
                 </label>
                 <input
                   type="number"
-                  value={tenderFormData.budgetHint}
-                  onChange={(e) => setTenderFormData(prev => ({ ...prev, budgetHint: e.target.value }))}
+                  name="budget_hint"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   placeholder="5000"
-                  required
                 />
                 <p className="text-xs text-gray-500 mt-1">{t.userDashboard.budgetHintNote}</p>
               </div>
@@ -1052,8 +967,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
                   </label>
                   <input
                     type="datetime-local"
-                    value={tenderFormData.availableFrom}
-                    onChange={(e) => setTenderFormData(prev => ({ ...prev, availableFrom: e.target.value }))}
+                    name="window_from"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   />
                 </div>
@@ -1063,8 +977,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
                   </label>
                   <input
                     type="datetime-local"
-                    value={tenderFormData.availableUntil}
-                    onChange={(e) => setTenderFormData(prev => ({ ...prev, availableUntil: e.target.value }))}
+                    name="window_to"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   />
                 </div>
@@ -1075,7 +988,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
                   {t.forms.projectPhotos}
                 </label>
                 <PhotoUpload
-                  onUpload={setTenderPhotos}
+                  onUpload={(files) => console.log('Photos uploaded:', files)}
                   maxFiles={8}
                   acceptedTypes={['image/jpeg', 'image/png', 'image/webp']}
                 />
@@ -1102,16 +1015,8 @@ export function UserDashboard({ user }: UserDashboardProps) {
         </div>
       )}
 
-      {/* Chat Modal */}
-      {showChatModal && (
-        <ChatModal 
-          user={user}
-          onClose={() => setShowChatModal(false)}
-        />
-      )}
-
       {/* Job Details Modal */}
-      {showJobDetailsModal && selectedJob && (
+      {showJobDetailsModal && selectedJobForDetails && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-screen overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
@@ -1127,47 +1032,70 @@ export function UserDashboard({ user }: UserDashboardProps) {
                 </button>
               </div>
             </div>
-            <div className="p-6 space-y-4">
+
+            <div className="p-6 space-y-6">
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Название работы</h3>
-                <p className="text-gray-700">{selectedJob.title}</p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Статус</h3>
-                <span className={`px-3 py-1 text-sm font-medium rounded-full ${
-                  selectedJob.status === 'done' ? 'bg-green-100 text-green-800' :
-                  selectedJob.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                  'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {selectedJob.status === 'done' ? 'Завершена' :
-                   selectedJob.status === 'in_progress' ? 'В процессе' : 'Новая'}
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{selectedJobForDetails.title}</h3>
+                <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(selectedJobForDetails.status)}`}>
+                  {getStatusText(selectedJobForDetails.status)}
                 </span>
               </div>
+
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Специалист</h3>
-                <p className="text-gray-700">{selectedJob.professional}</p>
+                <h4 className="font-medium text-gray-700 mb-2">Описание:</h4>
+                <p className="text-gray-600">{selectedJobForDetails.description}</p>
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Цена</h3>
-                <p className="text-2xl font-bold text-green-600">{selectedJob.price} лей</p>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-medium text-gray-700 mb-2">Бюджет:</h4>
+                  <p className="text-gray-900 font-semibold">
+                    {selectedJobForDetails.budget_min}-{selectedJobForDetails.budget_max} {t.common.currency}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-700 mb-2">Создано:</h4>
+                  <p className="text-gray-600">{formatDate(selectedJobForDetails.created_at)}</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Дата создания</h3>
-                <p className="text-gray-700">{selectedJob.date}</p>
-              </div>
-              <div className="flex space-x-3 pt-4">
-                <button
-                  onClick={() => {
-                    setShowJobDetailsModal(false);
-                    setShowChatModal(true);
-                  }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                >
-                  💬 Связаться со специалистом
-                </button>
+
+              {selectedJobForDetails.professional && (
+                <div>
+                  <h4 className="font-medium text-gray-700 mb-2">Специалист:</h4>
+                  <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-2xl">👨‍🔧</span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">{selectedJobForDetails.professional}</p>
+                      <p className="text-sm text-gray-600">Рейтинг: ⭐ 4.8</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedJobForDetails.scheduled_at && (
+                <div>
+                  <h4 className="font-medium text-gray-700 mb-2">Запланировано на:</h4>
+                  <p className="text-gray-600">{formatDate(selectedJobForDetails.scheduled_at)}</p>
+                </div>
+              )}
+
+              <div className="flex space-x-4 pt-4">
+                {selectedJobForDetails.professional && (
+                  <button 
+                    onClick={() => {
+                      setShowJobDetailsModal(false);
+                      setShowChatModal(true);
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+                  >
+                    💬 Связаться со специалистом
+                  </button>
+                )}
                 <button
                   onClick={() => setShowJobDetailsModal(false)}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors"
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold transition-colors"
                 >
                   Закрыть
                 </button>
@@ -1178,7 +1106,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
       )}
 
       {/* Review Modal */}
-      {showReviewModal && selectedJob && (
+      {showReviewModal && selectedJobForReview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-md w-full">
             <div className="p-6 border-b border-gray-200">
@@ -1194,45 +1122,52 @@ export function UserDashboard({ user }: UserDashboardProps) {
                 </button>
               </div>
             </div>
-            <div className="p-6 space-y-4">
+
+            <div className="p-6 space-y-6">
               <div>
-                <h3 className="font-medium text-gray-900 mb-2">Работа: {selectedJob.title}</h3>
-                <p className="text-sm text-gray-600">Специалист: {selectedJob.professional}</p>
+                <h3 className="font-semibold text-gray-900 mb-2">{selectedJobForReview.title}</h3>
+                <p className="text-sm text-gray-600">Специалист: {selectedJobForReview.professional}</p>
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Оценка</label>
-                <div className="flex space-x-1">
+                <label className="block text-sm font-medium text-gray-700 mb-3">Оценка:</label>
+                <div className="flex space-x-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
-                      className="text-2xl text-yellow-400 hover:text-yellow-500 transition-colors"
+                      onClick={() => setReviewRating(star)}
+                      className={`text-3xl transition-colors ${
+                        star <= reviewRating ? 'text-yellow-400' : 'text-gray-300'
+                      }`}
                     >
                       ⭐
                     </button>
                   ))}
                 </div>
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Комментарий</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Комментарий:</label>
                 <textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                   placeholder="Расскажите о качестве работы..."
                 />
               </div>
-              <div className="flex space-x-3">
+
+              <div className="flex space-x-4">
                 <button
-                  onClick={() => {
-                    alert('Отзыв отправлен!');
-                    setShowReviewModal(false);
-                  }}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors"
+                  onClick={handleSubmitReview}
+                  disabled={loading}
+                  className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white py-3 px-6 rounded-lg font-semibold transition-colors disabled:opacity-50"
                 >
-                  Отправить отзыв
+                  {loading ? 'Отправка...' : 'Отправить отзыв'}
                 </button>
                 <button
                   onClick={() => setShowReviewModal(false)}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-lg font-medium transition-colors"
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-semibold transition-colors"
                 >
                   Отмена
                 </button>
@@ -1242,8 +1177,88 @@ export function UserDashboard({ user }: UserDashboardProps) {
         </div>
       )}
 
+      {/* Applications Modal */}
+      {showApplicationsModal && selectedJobForApplications && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-screen overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">Заявки специалистов</h2>
+                <button
+                  onClick={() => setShowApplicationsModal(false)}
+                  className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{selectedJobForApplications.title}</h3>
+                <p className="text-gray-600">Получено заявок: {mockApplications.length}</p>
+              </div>
+
+              <div className="space-y-6">
+                {mockApplications.map((application) => (
+                  <div key={application.id} className="border border-gray-200 rounded-xl p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                          <span className="text-2xl">👨‍🔧</span>
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-900">{application.professional_name}</h4>
+                          <div className="flex items-center space-x-2 text-sm text-gray-600">
+                            <span>⭐ {application.rating}</span>
+                            <span>•</span>
+                            <span>💰 {application.price} лей</span>
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-xs text-gray-500">{formatDate(application.created_at)}</span>
+                    </div>
+
+                    <div className="mb-4">
+                      <p className="text-gray-700 mb-3">{application.message}</p>
+                      <div className="grid md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-700">Время выполнения:</span>
+                          <span className="ml-2 text-gray-600">{application.estimated_duration}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Доступность:</span>
+                          <span className="ml-2 text-gray-600">{application.availability}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex space-x-3">
+                      <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        ✅ Выбрать
+                      </button>
+                      <button 
+                        onClick={() => setShowChatModal(true)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        💬 Написать
+                      </button>
+                      <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                        👤 Профиль
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Bids Modal */}
-      {showBidsModal && selectedTender && (
+      {showBidsModal && selectedTenderForBids && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-4xl w-full max-h-screen overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
@@ -1258,49 +1273,60 @@ export function UserDashboard({ user }: UserDashboardProps) {
                   </svg>
                 </button>
               </div>
-              <p className="text-gray-600 mt-2">{selectedTender.title}</p>
             </div>
+
             <div className="p-6">
-              <div className="space-y-4">
-                {[
-                  { id: 1, name: 'Михаил Петров', price: 2200, rating: 4.9, time: '2-3 дня', warranty: '12 месяцев' },
-                  { id: 2, name: 'Анна Волкова', price: 2500, rating: 4.8, time: '1-2 дня', warranty: '6 месяцев' },
-                  { id: 3, name: 'Дмитрий Козлов', price: 1900, rating: 4.7, time: '3-4 дня', warranty: '24 месяца' }
-                ].map((bid) => (
-                  <div key={bid.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{bid.name}</h3>
-                        <div className="flex items-center space-x-2 text-sm text-gray-600">
-                          <span>⭐ {bid.rating}</span>
-                          <span>•</span>
-                          <span>⏱️ {bid.time}</span>
-                          <span>•</span>
-                          <span>🛡️ {bid.warranty}</span>
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{selectedTenderForBids.title}</h3>
+                <p className="text-gray-600">Получено предложений: {mockBids.length}</p>
+              </div>
+
+              <div className="space-y-6">
+                {mockBids.map((bid) => (
+                  <div key={bid.id} className="border border-gray-200 rounded-xl p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
+                          <span className="text-2xl">🎨</span>
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-900">{bid.professional_name}</h4>
+                          <div className="flex items-center space-x-2 text-sm text-gray-600">
+                            <span>⭐ {bid.rating}</span>
+                            <span>•</span>
+                            <span className="font-bold text-purple-600">💰 {bid.price} лей</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-green-600">{bid.price} лей</p>
+                      <span className="text-xs text-gray-500">{formatDate(bid.created_at)}</span>
+                    </div>
+
+                    <div className="mb-4">
+                      <p className="text-gray-700 mb-3">{bid.note}</p>
+                      <div className="grid md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-700">Начало работ:</span>
+                          <span className="ml-2 text-gray-600">{bid.eta_slot}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Гарантия:</span>
+                          <span className="ml-2 text-gray-600">{bid.warranty_days} дней</span>
+                        </div>
                       </div>
                     </div>
+
                     <div className="flex space-x-3">
-                      <button
-                        onClick={() => {
-                          alert(`Выбран специалист: ${bid.name} за ${bid.price} лей`);
-                          setShowBidsModal(false);
-                        }}
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                      >
-                        ✅ Выбрать
+                      <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        🏆 Выбрать победителем
                       </button>
-                      <button
+                      <button 
                         onClick={() => setShowChatModal(true)}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                       >
                         💬 Написать
                       </button>
                       <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">
-                        👁️ Профиль
+                        👤 Профиль
                       </button>
                     </div>
                   </div>
@@ -1311,60 +1337,12 @@ export function UserDashboard({ user }: UserDashboardProps) {
         </div>
       )}
 
-      {/* Applications Modal Placeholder */}
-      {showApplicationsModal && selectedJobForApplications && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-screen overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">Заявки специалистов</h2>
-                <button
-                  onClick={() => {
-                    setShowApplicationsModal(false);
-                    setSelectedJobForApplications(null);
-                  }}
-                  className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-6">
-              <p className="text-gray-600 mb-4">Работа: {selectedJobForApplications.title}</p>
-              <p className="text-gray-500">Здесь будут отображаться заявки от специалистов...</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Bids Modal Placeholder */}
-      {showBidsModal && selectedTenderForBids && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-screen overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">Предложения специалистов</h2>
-                <button
-                  onClick={() => {
-                    setShowBidsModal(false);
-                    setSelectedTenderForBids(null);
-                  }}
-                  className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-6">
-              <p className="text-gray-600 mb-4">Тендер: {selectedTenderForBids.title}</p>
-              <p className="text-gray-500">Здесь будут отображаться предложения от специалистов...</p>
-            </div>
-          </div>
-        </div>
+      {/* Chat Modal */}
+      {showChatModal && (
+        <ChatModal 
+          user={user}
+          onClose={() => setShowChatModal(false)}
+        />
       )}
     </div>
   );
