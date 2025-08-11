@@ -567,12 +567,7 @@ export function ProDashboard({ user }: ProDashboardProps) {
             <h2 className="text-xl font-semibold text-gray-900">Сообщения с клиентами</h2>
             <button 
               onClick={() => setShowChatModal(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
-              style={{ 
-                pointerEvents: 'auto',
-                zIndex: 9999,
-                position: 'relative'
-              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
             >
               💬 Открыть чаты
             </button>
@@ -732,7 +727,15 @@ export function ProDashboard({ user }: ProDashboardProps) {
                 />
               </div>
 
-              <div className="flex space-x-4">
+                  onClick={() => {
+                    alert('Подключение страхования...');
+                  }}
+                  className="text-purple-600 hover:text-purple-800 font-medium transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95"
+                  style={{ 
+                    pointerEvents: 'auto',
+                    zIndex: 9999,
+                    position: 'relative'
+                  }}
                 <button className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
                   Обновить профиль
                 </button>
