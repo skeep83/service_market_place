@@ -601,10 +601,30 @@ export function ProDashboard({ user }: ProDashboardProps) {
             <h3 className="text-lg font-semibold mb-2">Баланс кошелька</h3>
             <p className="text-3xl font-bold mb-4">2,450 лей</p>
             <div className="flex space-x-4">
-              <button className="bg-white text-purple-600 px-4 py-2 rounded-lg font-medium hover:bg-purple-50 transition-colors">
+              <button 
+                onClick={() => {
+                  alert('Функция вывода средств будет доступна после интеграции с платежной системой');
+                }}
+                className="bg-white text-purple-600 px-4 py-2 rounded-lg font-medium hover:bg-purple-50 transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                style={{ 
+                  pointerEvents: 'auto',
+                  zIndex: 9999,
+                  position: 'relative'
+                }}
+              >
                 Вывести средства
               </button>
-              <button className="bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors border border-white/20">
+              <button 
+                onClick={() => {
+                  alert('Открытие истории транзакций...');
+                }}
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-md hover:shadow-lg border border-white/20"
+                style={{ 
+                  pointerEvents: 'auto',
+                  zIndex: 9999,
+                  position: 'relative'
+                }}
+              >
                 История
               </button>
             </div>
@@ -727,17 +747,12 @@ export function ProDashboard({ user }: ProDashboardProps) {
                 />
               </div>
 
-                  onClick={() => {
-                    alert('Подключение страхования...');
-                  }}
-                  className="text-purple-600 hover:text-purple-800 font-medium transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95"
-                  style={{ 
-                    pointerEvents: 'auto',
-                    zIndex: 9999,
-                    position: 'relative'
-                  }}
+              <div className="flex space-x-4">
                 <button className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-                  Обновить профиль
+                  Сохранить изменения
+                </button>
+                <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-medium transition-colors">
+                  Отмена
                 </button>
               </div>
             </div>
