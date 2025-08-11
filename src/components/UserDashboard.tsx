@@ -391,7 +391,12 @@ export function UserDashboard({ user }: UserDashboardProps) {
               </div>
               <button 
                 onClick={() => setShowJobModal(true)}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-xl font-semibold transition-colors"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                style={{ 
+                  pointerEvents: 'auto',
+                  zIndex: 9999,
+                  position: 'relative'
+                }}
               >
                 {language === 'ro' ? 'Rezervă Acum' : 'Забронировать Сейчас'}
               </button>
@@ -415,7 +420,12 @@ export function UserDashboard({ user }: UserDashboardProps) {
               </div>
               <button 
                 onClick={() => setShowTenderModal(true)}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-xl font-semibold transition-colors"
+                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                style={{ 
+                  pointerEvents: 'auto',
+                  zIndex: 9999,
+                  position: 'relative'
+                }}
               >
                 {language === 'ro' ? 'Începe Licitația' : 'Создать Тендер'}
               </button>
