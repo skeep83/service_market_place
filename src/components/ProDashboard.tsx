@@ -546,26 +546,11 @@ export function ProDashboard({ user }: ProDashboardProps) {
                       setSelectedTender(tender);
                       setShowBidModal(true);
                     }}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
-                    style={{ 
-                      pointerEvents: 'auto',
-                      zIndex: 9999,
-                      position: 'relative'
-                    }}
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                   >
                     Сделать предложение
                   </button>
-                  <button 
-                    onClick={() => {
-                      alert(`Подробности тендера: ${tender.title}\nБюджет: ~${tender.budget_hint} лей\nПредложений: ${tender.bids_count}\nДедлайн: ${formatDate(tender.deadline)}`);
-                    }}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
-                    style={{ 
-                      pointerEvents: 'auto',
-                      zIndex: 9999,
-                      position: 'relative'
-                    }}
-                  >
+                  <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">
                     Подробности
                   </button>
                 </div>
@@ -582,7 +567,12 @@ export function ProDashboard({ user }: ProDashboardProps) {
             <h2 className="text-xl font-semibold text-gray-900">Сообщения с клиентами</h2>
             <button 
               onClick={() => setShowChatModal(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+              style={{ 
+                pointerEvents: 'auto',
+                zIndex: 9999,
+                position: 'relative'
+              }}
             >
               💬 Открыть чаты
             </button>
