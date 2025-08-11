@@ -56,7 +56,6 @@ export function UserDashboard({ user }: UserDashboardProps) {
   const [selectedTender, setSelectedTender] = useState<any>(null);
   const [showChatModal, setShowChatModal] = useState(false);
   const [showApplicationsModal, setShowApplicationsModal] = useState(false);
-  const [showBidsModal, setShowBidsModal] = useState(false);
   const [selectedJobForApplications, setSelectedJobForApplications] = useState<Job | null>(null);
   const [selectedTenderForBids, setSelectedTenderForBids] = useState<Tender | null>(null);
   const [loading, setLoading] = useState(false);
