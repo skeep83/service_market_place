@@ -3,10 +3,40 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Proactively clean up invalid session data before creating client
+const cleanupInvalidSession = () => {
+  try {
+    const authKey = `sb-${supabaseUrl?.split('//')[1]?.split('.')[0]}-auth-token`;
+    const storedAuth = localStorage.getItem(authKey);
+    
+    if (storedAuth) {
+      const authData = JSON.parse(storedAuth);
+      // Check if refresh token exists and is valid format
+      if (!authData.refresh_token || 
+          typeof authData.refresh_token !== 'string' || 
+          authData.refresh_token.length < 10) {
+        localStorage.removeItem(authKey);
+      }
+    }
+  } catch (error) {
+    // If any error occurs during cleanup, clear all auth-related storage
+    Object.keys(localStorage).forEach(key => {
+      if (key.includes('supabase') || key.includes('auth')) {
+        localStorage.removeItem(key);
+      }
+    });
+  }
+};
+
 // Check if Supabase credentials are properly configured
 const isSupabaseConfigured = supabaseUrl && supabaseAnonKey && 
   supabaseUrl !== 'https://your-project-ref.supabase.co' && 
   supabaseAnonKey !== 'your-anon-key-here';
+
+// Clean up invalid session data before creating client
+if (isSupabaseConfigured) {
+  cleanupInvalidSession();
+}
 
 // Create client only if properly configured, otherwise use mock
 export const supabase = isSupabaseConfigured 
