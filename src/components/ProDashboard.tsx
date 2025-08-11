@@ -546,11 +546,26 @@ export function ProDashboard({ user }: ProDashboardProps) {
                       setSelectedTender(tender);
                       setShowBidModal(true);
                     }}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                    style={{ 
+                      pointerEvents: 'auto',
+                      zIndex: 9999,
+                      position: 'relative'
+                    }}
                   >
                     Сделать предложение
                   </button>
-                  <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                  <button 
+                    onClick={() => {
+                      alert(`Подробности тендера: ${tender.title}\nБюджет: ~${tender.budget_hint} лей\nПредложений: ${tender.bids_count}\nДедлайн: ${formatDate(tender.deadline)}`);
+                    }}
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                    style={{ 
+                      pointerEvents: 'auto',
+                      zIndex: 9999,
+                      position: 'relative'
+                    }}
+                  >
                     Подробности
                   </button>
                 </div>
