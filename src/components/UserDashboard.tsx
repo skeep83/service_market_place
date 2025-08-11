@@ -56,6 +56,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
   const [selectedTender, setSelectedTender] = useState<any>(null);
   const [showChatModal, setShowChatModal] = useState(false);
   const [showApplicationsModal, setShowApplicationsModal] = useState(false);
+  const [showBidsModal, setShowBidsModal] = useState(false);
   const [selectedJobForApplications, setSelectedJobForApplications] = useState<Job | null>(null);
   const [selectedTenderForBids, setSelectedTenderForBids] = useState<Tender | null>(null);
   const [loading, setLoading] = useState(false);
@@ -1108,6 +1109,207 @@ export function UserDashboard({ user }: UserDashboardProps) {
           user={user}
           onClose={() => setShowChatModal(false)}
         />
+      )}
+
+      {/* Job Details Modal */}
+      {showJobDetailsModal && selectedJob && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">Детали работы</h2>
+                <button
+                  onClick={() => setShowJobDetailsModal(false)}
+                  className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Название работы</h3>
+                <p className="text-gray-700">{selectedJob.title}</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Статус</h3>
+                <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+                  selectedJob.status === 'done' ? 'bg-green-100 text-green-800' :
+                  selectedJob.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                  'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {selectedJob.status === 'done' ? 'Завершена' :
+                   selectedJob.status === 'in_progress' ? 'В процессе' : 'Новая'}
+                </span>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Специалист</h3>
+                <p className="text-gray-700">{selectedJob.professional}</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Цена</h3>
+                <p className="text-2xl font-bold text-green-600">{selectedJob.price} лей</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Дата создания</h3>
+                <p className="text-gray-700">{selectedJob.date}</p>
+              </div>
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={() => {
+                    setShowJobDetailsModal(false);
+                    setShowChatModal(true);
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                >
+                  💬 Связаться со специалистом
+                </button>
+                <button
+                  onClick={() => setShowJobDetailsModal(false)}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors"
+                >
+                  Закрыть
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review Modal */}
+      {showReviewModal && selectedJob && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">Оставить отзыв</h2>
+                <button
+                  onClick={() => setShowReviewModal(false)}
+                  className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <h3 className="font-medium text-gray-900 mb-2">Работа: {selectedJob.title}</h3>
+                <p className="text-sm text-gray-600">Специалист: {selectedJob.professional}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Оценка</label>
+                <div className="flex space-x-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      className="text-2xl text-yellow-400 hover:text-yellow-500 transition-colors"
+                    >
+                      ⭐
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Комментарий</label>
+                <textarea
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Расскажите о качестве работы..."
+                />
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    alert('Отзыв отправлен!');
+                    setShowReviewModal(false);
+                  }}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors"
+                >
+                  Отправить отзыв
+                </button>
+                <button
+                  onClick={() => setShowReviewModal(false)}
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-lg font-medium transition-colors"
+                >
+                  Отмена
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bids Modal */}
+      {showBidsModal && selectedTender && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-screen overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">Предложения по тендеру</h2>
+                <button
+                  onClick={() => setShowBidsModal(false)}
+                  className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-gray-600 mt-2">{selectedTender.title}</p>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                {[
+                  { id: 1, name: 'Михаил Петров', price: 2200, rating: 4.9, time: '2-3 дня', warranty: '12 месяцев' },
+                  { id: 2, name: 'Анна Волкова', price: 2500, rating: 4.8, time: '1-2 дня', warranty: '6 месяцев' },
+                  { id: 3, name: 'Дмитрий Козлов', price: 1900, rating: 4.7, time: '3-4 дня', warranty: '24 месяца' }
+                ].map((bid) => (
+                  <div key={bid.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{bid.name}</h3>
+                        <div className="flex items-center space-x-2 text-sm text-gray-600">
+                          <span>⭐ {bid.rating}</span>
+                          <span>•</span>
+                          <span>⏱️ {bid.time}</span>
+                          <span>•</span>
+                          <span>🛡️ {bid.warranty}</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-green-600">{bid.price} лей</p>
+                      </div>
+                    </div>
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={() => {
+                          alert(`Выбран специалист: ${bid.name} за ${bid.price} лей`);
+                          setShowBidsModal(false);
+                        }}
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        ✅ Выбрать
+                      </button>
+                      <button
+                        onClick={() => setShowChatModal(true)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        💬 Написать
+                      </button>
+                      <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                        👁️ Профиль
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Applications Modal Placeholder */}
